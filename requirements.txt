@@ -1,0 +1,4 @@
+requests
+charset-normalizer
+python-dotenv
+beautifulsoup4
