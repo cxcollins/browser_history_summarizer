@@ -20,3 +20,9 @@ def scrape_text_from_url(url: str, timeout: int = 5) -> str:
     except Exception as e:
         print(f"Error scraping {url}: {e}")
         return ""
+
+
+def extract_title(html_content: str) -> str:
+    soup = BeautifulSoup(html_content, "html.parser")
+    title_tag = soup.find('title')
+    return title_tag.get_text(strip=True) if title_tag else "No Title Found"

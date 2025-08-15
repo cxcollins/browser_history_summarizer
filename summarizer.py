@@ -1,13 +1,13 @@
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3"
+MODEL = "granite3.2:2b"
 
 
 def summarize_text(text: str) -> str:
     payload = {
         "model": MODEL,
-        "prompt": f"Summarize the following webpage:\n\n{text}",
+        "prompt": f"Summarize the following webpage, using 30 words or less. Be concise, but make sure to capture the key points:\n\n{text}",
         "stream": False
     }
 
