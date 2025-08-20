@@ -9,10 +9,9 @@ DAYS_BACK = int(os.getenv("DAYS_BACK", "1"))
 
 
 def connect_rabbitmq():
-    """Connect to RabbitMQ with retry logic"""
     max_retries = 10
     retry_delay = 5
-    
+
     for attempt in range(max_retries):
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
@@ -22,7 +21,7 @@ def connect_rabbitmq():
             print(f"[publisher] failed to connect to RabbitMQ (attempt {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
-    
+
     raise Exception("Failed to connect to RabbitMQ after all retries")
 
 

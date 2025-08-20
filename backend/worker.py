@@ -1,31 +1,13 @@
 import os, json, sqlite3, pika, signal, sys, time
 from scraper import scrape_text_from_url, extract_title
 from summarizer import summarize_text
-from setup_db import setup
+from setup_db import setup_database
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 BATCH_SIZE = 10
 buffer = []
 
-# Use containerized database path
 DB_PATH = "/app/data/summaries.db"
-
-
-def setup_database():
-    """Initialize database with proper path"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS summaries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        url TEXT UNIQUE,
-        title TEXT NOT NULL,
-        summary TEXT NOT NULL,
-        visit_time DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
-    conn.commit()
-    conn.close()
 
 
 def save_buffer():
@@ -63,7 +45,7 @@ def callback(ch, method, properties, body):
         print(f"[worker] summarization failed {url}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
-        
+
     buffer.append((url, title, summary, visit_time))
 
     if len(buffer) >= BATCH_SIZE:
@@ -82,7 +64,7 @@ def connect_rabbitmq():
     """Connect to RabbitMQ with retry logic"""
     max_retries = 10
     retry_delay = 5
-    
+
     for attempt in range(max_retries):
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
@@ -92,7 +74,7 @@ def connect_rabbitmq():
             print(f"[worker] failed to connect to RabbitMQ (attempt {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
-    
+
     raise Exception("Failed to connect to RabbitMQ after all retries")
 
 

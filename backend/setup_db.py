@@ -1,9 +1,9 @@
 import sqlite3
 
-def setup():
-    conn = sqlite3.connect("summaries.db")
-    cursor = conn.cursor()
 
+def setup_database(DB_PATH):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS summaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,10 +13,10 @@ def setup():
         visit_time DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-
     conn.commit()
     conn.close()
 
+
 if __name__ == "__main__":
-    setup()
+    setup_database()
     print("Database setup complete")
