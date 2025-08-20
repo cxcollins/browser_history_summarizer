@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+  ingester:
+    volumes:
+      - ./backend:/app/backend
+
+  worker:
+    volumes:
+      - ./backend:/app/backend

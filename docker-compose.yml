@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ingester:
+    build: .
+    command: python backend/publisher.py
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - DAYS_BACK=7
+      - HISTORY_PATH=${HISTORY_PATH}
+    volumes:
+      - ${HISTORY_PATH}:${HISTORY_PATH}:ro
+      - ./data:/app/data
+
+  worker:
+    build: .
+    command: python backend/worker.py
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+    volumes:
+      - ./data:/app/data
+    deploy:
+      replicas: 2

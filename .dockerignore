@@ -1,0 +1,18 @@
+# Frontend
+frontend/
+
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Venvs
+venv/
+
+# Artifacts
+.DS_Storeyes

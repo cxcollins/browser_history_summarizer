@@ -2,3 +2,5 @@ requests
 charset-normalizer
 python-dotenv
 beautifulsoup4
+pika
+requests

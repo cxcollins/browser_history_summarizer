@@ -11,6 +11,10 @@ def summarize_text(text: str) -> str:
         "stream": False
     }
 
-    response = requests.post(OLLAMA_URL, json=payload)
-    response.raise_for_status()
-    return response.json()['response']
+    try:
+        response = requests.post(OLLAMA_URL, json=payload)
+        response.raise_for_status()
+        return response.json()['response']
+    except Exception as e:
+        print(f"Error with LLM summarization: {e}")
+        return ""
