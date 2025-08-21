@@ -7,6 +7,7 @@ from typing import List, Tuple
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "granite3.2:2b"
+DB_PATH = "data/summaries.db"
 
 
 def get_all_summaries(cursor) -> List[Tuple]:
@@ -20,7 +21,6 @@ def get_all_summaries(cursor) -> List[Tuple]:
 
 
 def format_summaries_for_llm(summaries: List[Tuple]) -> str:
-    """Format summaries for LLM context"""
     formatted = []
     for i, (url, title, summary, visit_time) in enumerate(summaries):
         # Convert timestamp to readable date
@@ -98,7 +98,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        conn = sqlite3.connect(args.db_path)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Get all summaries

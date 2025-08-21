@@ -1,10 +1,8 @@
 import sqlite3
 import datetime
 import os
-from dotenv import load_dotenv
 from typing import List, Tuple
 
-load_dotenv()
 history_path = os.getenv("HISTORY_PATH")
 
 

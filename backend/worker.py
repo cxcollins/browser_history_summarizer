@@ -3,11 +3,15 @@ from scraper import scrape_text_from_url, extract_title
 from summarizer import summarize_text
 from setup_db import setup_database
 
+print("[worker] Imports successful")
+
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 BATCH_SIZE = 10
 buffer = []
 
 DB_PATH = "/app/data/summaries.db"
+
+print(f"[worker] Configuration loaded - RABBITMQ_HOST={RABBITMQ_HOST}, DB_PATH={DB_PATH}")
 
 
 def save_buffer():
@@ -35,18 +39,22 @@ def callback(ch, method, properties, body):
     print(f"[worker] processing {url}")
     content = scrape_text_from_url(url)
     if not content:
-        print(f"[worker] scrape failed {url}")
+        print(f"[worker] failed to scrape {url}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
 
     title = extract_title(content)
     summary = summarize_text(content)
     if not summary:
-        print(f"[worker] summarization failed {url}")
+        print(f"[worker] failed to summarize {url}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
 
-    buffer.append((url, title, summary, visit_time))
+    # Convert WebKit timestamp to Unix timestamp (Safari uses WebKit epoch: Jan 1, 2001)
+    unix_timestamp = visit_time + 978307200
+    
+    buffer.append((url, title, summary, unix_timestamp))
+    print(f"[worker] processed {url} -> {len(summary)} chars")
 
     if len(buffer) >= BATCH_SIZE:
         save_buffer()
@@ -79,19 +87,36 @@ def connect_rabbitmq():
 
 
 def main():
-    setup_database()
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
+    print("[worker] Starting worker node")
 
-    connection = connect_rabbitmq()
-    channel = connection.channel()
-    channel.queue_declare(queue="urls", durable=True)
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue="urls", on_message_callback=callback)
+    try:
+        print("[worker] Setting up database...")
+        setup_database(DB_PATH)
+        print("[worker] Database setup complete")
 
-    print("[worker] waiting for messages…")
-    channel.start_consuming()
+        print("[worker] Setting up signal handlers...")
+        signal.signal(signal.SIGINT, shutdown)
+        signal.signal(signal.SIGTERM, shutdown)
+        print("[worker] Signal handlers set")
+
+        print("[worker] Connecting to RabbitMQ...")
+        connection = connect_rabbitmq()
+        channel = connection.channel()
+        channel.queue_declare(queue="urls", durable=True)
+        channel.basic_qos(prefetch_count=1)
+        channel.basic_consume(queue="urls", on_message_callback=callback)
+
+        print("[worker] Starting to consume messages...")
+        channel.start_consuming()
+
+    except Exception as e:
+        print(f"[worker] FATAL ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
+    print("[worker] Worker script starting...")
     main()
+    print("[worker] Worker script finished")

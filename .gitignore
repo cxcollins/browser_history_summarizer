@@ -2,3 +2,5 @@
 /__pycache__
 /venv
 summaries.db
+/data
+/backend/__pycache__

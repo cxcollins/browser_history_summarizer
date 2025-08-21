@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -16,7 +14,7 @@ services:
       timeout: 10s
       retries: 5
 
-  ingester:
+  publisher:
     build: .
     command: python backend/publisher.py
     depends_on:
@@ -24,10 +22,10 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - DAYS_BACK=7
-      - HISTORY_PATH=${HISTORY_PATH}
+      - DAYS_BACK=14
+      - HISTORY_PATH=/app/data/History.db
     volumes:
-      - ${HISTORY_PATH}:${HISTORY_PATH}:ro
+      - ./data/History.db:/app/data/History.db:ro
       - ./data:/app/data
 
   worker:
@@ -39,6 +37,7 @@ services:
     environment:
       - RABBITMQ_HOST=rabbitmq
       - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
     deploy:

@@ -7,6 +7,8 @@ from ingester import ingest_safari_history
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 DAYS_BACK = int(os.getenv("DAYS_BACK", "1"))
 
+print(f"[publisher] Starting with RABBITMQ_HOST={RABBITMQ_HOST}, DAYS_BACK={DAYS_BACK}")
+
 
 def connect_rabbitmq():
     max_retries = 10
@@ -26,13 +28,24 @@ def connect_rabbitmq():
 
 
 def main():
+    print("[publisher] Starting main function...")
+
     connection = connect_rabbitmq()
     channel = connection.channel()
     channel.queue_declare(queue="urls", durable=True)
 
     print(f"[publisher] ingesting Safari history for last {DAYS_BACK} days...")
-    records = ingest_safari_history(days_back=DAYS_BACK)
-    print(f"[publisher] found {len(records)} history records")
+
+    try:
+        records = ingest_safari_history(days_back=DAYS_BACK)
+        print(f"[publisher] found {len(records)} history records")
+    except Exception as e:
+        print(f"[publisher] ERROR ingesting history: {e}")
+        return
+
+    if not records:
+        print("[publisher] No records found - exiting")
+        return
 
     published = 0
     for url, visit_time in records:
@@ -54,4 +67,6 @@ def main():
 
 
 if __name__ == "__main__":
+    print("[publisher] Script started")
     main()
+    print("[publisher] Script finished")
